@@ -5,7 +5,7 @@ CREATE TABLE `transports`
     `id`            INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `serial_number` varchar(64)      NOT NULL UNIQUE,
     `created_at`    DATETIME         NOT NULL,
-    `updated_at`    DATETIME         NOT NULL,
+    `updated_at`    DATETIME         NULL,
     `deleted_at`    DATETIME         NULL,
     PRIMARY KEY (`id`)
 );
@@ -96,7 +96,7 @@ CREATE TABLE `routes`
     `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `code`       varchar(10)      NOT NULL UNIQUE,
     `created_at` DATETIME         NOT NULL,
-    `updated_at` DATETIME         NOT NULL,
+    `updated_at` DATETIME         NULL,
     `deleted_at` DATETIME         NULL,
     PRIMARY KEY (`id`)
 );
@@ -123,7 +123,7 @@ CREATE TABLE `positions`
     `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `title`      varchar(60)      NOT NULL UNIQUE,
     `created_at` DATETIME         NOT NULL,
-    `updated_at` DATETIME         NOT NULL,
+    `updated_at` DATETIME         NULL,
     `deleted_at` DATETIME         NULL,
     PRIMARY KEY (`id`)
 );
@@ -146,7 +146,7 @@ CREATE TABLE `employees`
     `position_id` INT(11) unsigned NOT NULL,
     `birth_at`    DATETIME         NOT NULL,
     `hired_at`    DATETIME         NOT NULL,
-    `updated_at`  DATETIME         NOT NULL,
+    `updated_at`  DATETIME         NULL,
     `deleted_at`  DATETIME         NULL,
     PRIMARY KEY (`id`)
 );
@@ -173,7 +173,7 @@ CREATE TABLE `timelogs`
     `transport_id` INT(11) unsigned NOT NULL,
     `route_id`     INT(11) unsigned NOT NULL,
     `created_at`   DATETIME         NOT NULL,
-    `updated_at`   DATETIME         NOT NULL,
+    `updated_at`   DATETIME         NULL,
     PRIMARY KEY (`id`)
 );
 
