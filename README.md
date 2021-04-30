@@ -1,11 +1,16 @@
+Lesson 13: SQL
+==============
+
+## Database schema for "CK ELECTROTRANS DEPOT"
+
+![image info](./database_schema.png)
+
 Lesson 14: SQL-queries
 ======================
 
 ## Add tables
 
-Add tickets and transport-tickets tables and add the test data for this tables.
-
-[*] Unique tickets generation *2017.1554498672*
+Add tickets and transport-tickets tables and add the test data for these tables.
 
 ## Make queries
 
@@ -17,5 +22,7 @@ In case of this lesson need make next SQL-queries:
 - [*] Get total working days and total profit from this employee on his working days.
 - Get employees list born in the MAY month.
 - Count total years of working experience for any employee in the company.
-  https://app.hopin.com/events/magento-association-connect-2021/sessions/7f82c3a1-4081-43c0-84f0-d97e01b1f80b
-est with a php file, for example, I created a file phpinfo.php in /var/www/html/phpinfo.php with
+
+Lesson 15: Indexes and queries optimization
+===========================================
+
