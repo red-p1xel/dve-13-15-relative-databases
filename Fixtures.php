@@ -122,18 +122,17 @@ class Fixtures
             'positions' => <<<SQL
                 CREATE TABLE IF NOT EXISTS positions
                 (
-                    `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
-                    `title`      varchar(60)      NOT NULL UNIQUE,
-                    `created_at` DATETIME         NOT NULL DEFAULT '$currentDT',
-                    `updated_at` DATETIME         NULL DEFAULT NULL,
-                    `deleted_at` DATETIME         NULL DEFAULT NULL,
-                    PRIMARY KEY (`id`)
+                    `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `title`       varchar(60)      NOT NULL UNIQUE,
+                    `created_at`  DATETIME         NOT NULL DEFAULT '$currentDT',
+                    `updated_at`  DATETIME         NULL DEFAULT NULL,
+                    PRIMARY KEY (`position_id`)
                 );
                 SQL,
             'employees' => <<<SQL
                 CREATE TABLE IF NOT EXISTS employees
                 (
-                    `id`          INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `employee_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `first_name`  varchar(25)      NOT NULL,
                     `last_name`   varchar(25)      NOT NULL,
                     `rate`        DECIMAL(4, 2)    NOT NULL DEFAULT '1.00',
@@ -141,40 +140,37 @@ class Fixtures
                     `birth_at`    DATETIME         NOT NULL DEFAULT '1986-05-01 09:45:00',
                     `hired_at`    DATETIME         NOT NULL DEFAULT '2021-03-25 10:00:00',
                     `updated_at`  DATETIME         NULL DEFAULT NULL,
-                    `deleted_at`  DATETIME         NULL DEFAULT NULL,
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`employee_id`)
                 );
                 SQL,
             'transports' => <<<SQL
                 CREATE TABLE IF NOT EXISTS transports
                 (
-                    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `transport_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `serial`       VARCHAR(36)      NOT NULL,
                     `created_at`   DATETIME         NOT NULL,
                     `updated_at`   DATETIME         NULL DEFAULT NULL,
-                    `deleted_at`   DATETIME         NULL DEFAULT NULL,
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`transport_id`)
                 );
                 SQL,
             'routes' =>  <<<SQL
                 CREATE TABLE IF NOT EXISTS routes
                 (
-                    `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `route_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `code`       varchar(3)       NOT NULL UNIQUE,
                     `created_at` DATETIME         NOT NULL,
                     `updated_at` DATETIME         NULL DEFAULT NULL,
-                    `deleted_at` DATETIME         NULL DEFAULT NULL,
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`route_id`)
                 );
                 SQL,
             'tickets' =>  <<<SQL
                 CREATE TABLE IF NOT EXISTS tickets
                 (
-                    `id`         BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `ticket_id`  BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `code`       VARCHAR(2)          NOT NULL DEFAULT 'AC',
                     `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 4.00,
                     `created_at` DATETIME            NOT NULL DEFAULT '$currentDT',
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`ticket_id`)
                 );
                 SQL,
             'transport_tickets' =>  <<<SQL
@@ -188,28 +184,27 @@ class Fixtures
             'timelogs' =>  <<<SQL
                 CREATE TABLE IF NOT EXISTS timelogs
                 (
-                    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `timelog_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `time_spent`   DECIMAL(2, 1)    NOT NULL DEFAULT 7.00,
                     `employee_id`  INT(11) unsigned NOT NULL,
                     `transport_id` INT(11) unsigned NOT NULL,
                     `route_id`     INT(11) unsigned NOT NULL,
                     `created_at`   DATETIME         NOT NULL DEFAULT '1994-03-03 09:00:00',
                     `updated_at`   DATETIME         NULL DEFAULT NULL,
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`timelog_id`)
                 );
                 SQL,
             'salaries' =>  <<<SQL
                 CREATE TABLE IF NOT EXISTS salaries
                 (
-                    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `salary_id`    INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `total_amount` DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
                     `employee_id`  INT(11) unsigned NOT NULL,
                     `created_at`   DATE             NOT NULL DEFAULT '1994-03-03',
-                    PRIMARY KEY (`id`)
+                    PRIMARY KEY (`salary_id`)
                 );
                 SQL,
         ];
-
         foreach ($tables as $table => $sql) {
             $begin = microtime(true);
             $this->connection->prepare($sql)->execute(['firstId' => $firstId]);
@@ -219,7 +214,45 @@ class Fixtures
 
         $this->connection->prepare(<<<SQL
             ALTER TABLE tickets AUTO_INCREMENT = $firstId;
-        SQL
+            SQL
+        )->execute();
+
+//------ Create FK for database tables ---------------------------------------------------------------------------------
+
+        $this->connection->prepare(<<<SQL
+            ALTER TABLE transport_tickets ADD CONSTRAINT `transport_tickets_fk0` FOREIGN KEY (transport_id)
+                REFERENCES transports (transport_id) ON DELETE NO ACTION;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE transport_tickets  ADD CONSTRAINT `transport_tickets_fk1` FOREIGN KEY (ticket_id)
+                    REFERENCES tickets (ticket_id) ON DELETE NO ACTION;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE employees ADD CONSTRAINT `employees_fk0` FOREIGN KEY (position_id) 
+                    REFERENCES positions (position_id) ON DELETE CASCADE;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk0` FOREIGN KEY (employee_id) 
+                    REFERENCES employees (employee_id) ON DELETE CASCADE;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk1` FOREIGN KEY (transport_id) 
+                    REFERENCES transports (transport_id) ON DELETE CASCADE;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (route_id) 
+                    REFERENCES routes (route_id) ON DELETE CASCADE;
+            SQL
+        )->execute();
+        $this->connection->prepare(<<<SQL
+                ALTER TABLE salaries ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (employee_id)
+                    REFERENCES employees (employee_id) ON DELETE CASCADE;
+            SQL
         )->execute();
 
         return empty($tables);
@@ -272,11 +305,7 @@ class Fixtures
     {
         $begin = microtime(true);
 
-//        $firstId = DEFAULT_FIRST_TICKET_ID;
-//        $ticketsNum = (!$ticketsNum) ? DEFAULT_TICKETS_NUM + $firstId : $ticketsNum + $firstId;
-
         $totalQty = $qty + $firstId;
-
         $q = $this->connection->prepare(<<<SQL
                 INSERT INTO tickets (created_at) VALUES (:createdAt);
             SQL
@@ -363,9 +392,6 @@ class Fixtures
     {
         $begin = microtime(true);
 
-//        $randomValueFromRange = null;
-//        $soldAt = $this->randomDateByRange(10, 1);
-
         if(isset($firstId, $qty, $options['rangeIds'])) {
             $randomValueFromRange = random_int($options['rangeIds']['begin'], $options['rangeIds']['end']);
             $q = $this->connection->prepare(<<<SQL
@@ -398,7 +424,7 @@ class Fixtures
         }
     }
 
-//    private function employeeSalaries(int $employeeId, $recordsNum): void {}
+// TODO: Implement methods [`employeesTimelogs`, `employeesSalaries`] for accomplish fixture generator.
 
 //----------------------------------------------------------------------------------------------------------------------
     public function generate(): void
@@ -413,15 +439,15 @@ class Fixtures
         ];
 
         try {
-//------ TCL-----------------------------------------------------------------------------------------------------------
+        //------ TCL ---------------------------------------------------------------------------------------------------
             $this->connection->beginTransaction();
             $this->createTables();
 
-        //------ DML: SEEDING DATA TO DATABASE TABLES ------------------------------------------------------------------
+            //------ DML: SEEDING DATA TO DATABASE TABLES --------------------------------------------------------------
             $this->routesGenerator(DEFAULT_ROUTES_LIST);
             $this->vehiclesGenerator(45);
             $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
-            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
+            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $options);
             $this->generatePositions(DEFAULT_POSITIONS);
             $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
 
