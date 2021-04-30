@@ -11,12 +11,11 @@ CREATE DATABASE IF NOT EXISTS `ck_electrotrans_depot` CHARACTER SET utf8mb4 COLL
 DROP TABLE IF EXISTS `transports`;
 CREATE TABLE `transports`
 (
-    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `transport_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `serial`       VARCHAR(36)      NOT NULL,
     `created_at`   DATETIME         NOT NULL,
     `updated_at`   DATETIME         NULL DEFAULT NULL,
-    `deleted_at`   DATETIME         NULL DEFAULT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`transport_id`)
 );
 
 INSERT INTO `transports` (serial, created_at)
@@ -38,15 +37,14 @@ VALUES ('7c69d2b4-a906-11eb-bf69-0242ac11000a', '2000-04-27 09:35:00'),
 DROP TABLE IF EXISTS `tickets`;
 CREATE TABLE `tickets`
 (
-    `id`         BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `ticket_id`         BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
     `code`       VARCHAR(2)          NOT NULL DEFAULT 'AC',
     `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 4.00,
     `created_at` DATETIME            NOT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`ticket_id`)
 );
 
-ALTER TABLE `tickets`
-    AUTO_INCREMENT = 10000;
+ALTER TABLE `tickets` AUTO_INCREMENT = 10000;
 INSERT INTO `tickets` (created_at)
 VALUES ('2000-01-01 03:00:00'),
        ('2000-01-01 03:00:00'),
@@ -80,10 +78,10 @@ CREATE TABLE `transport_tickets`
 
 
 ALTER TABLE `transport_tickets`
-    ADD CONSTRAINT `transport_tickets_fk0` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`id`) ON DELETE NO ACTION;
+    ADD CONSTRAINT `transport_tickets_fk0` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`transport_id`) ON DELETE NO ACTION;
 
 ALTER TABLE `transport_tickets`
-    ADD CONSTRAINT `transport_tickets_fk1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE NO ACTION;
+    ADD CONSTRAINT `transport_tickets_fk1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`ticket_id`) ON DELETE NO ACTION;
 
 INSERT INTO `transport_tickets` (transport_id, ticket_id)
 VALUES (3, 10001),
@@ -111,12 +109,11 @@ VALUES (3, 10001),
 DROP TABLE IF EXISTS `routes`;
 CREATE TABLE `routes`
 (
-    `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `route_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `code`       varchar(3)       NOT NULL UNIQUE,
     `created_at` DATETIME         NOT NULL,
     `updated_at` DATETIME         NULL DEFAULT NULL,
-    `deleted_at` DATETIME         NULL DEFAULT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`route_id`)
 );
 
 INSERT INTO `routes` (code, created_at)
@@ -138,12 +135,11 @@ VALUES ('1', '2000-04-27 11:35:09'),
 DROP TABLE IF EXISTS `positions`;
 CREATE TABLE `positions`
 (
-    `id`         INT(11) unsigned NOT NULL AUTO_INCREMENT,
-    `title`      varchar(60)      NOT NULL UNIQUE,
-    `created_at` DATETIME         NOT NULL,
-    `updated_at` DATETIME         NULL DEFAULT NULL,
-    `deleted_at` DATETIME         NULL DEFAULT NULL,
-    PRIMARY KEY (`id`)
+    `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `title`       varchar(60)      NOT NULL UNIQUE,
+    `created_at`  DATETIME         NOT NULL,
+    `updated_at`  DATETIME         NULL DEFAULT NULL,
+    PRIMARY KEY (`position_id`)
 );
 
 INSERT INTO `positions` (title, created_at)
@@ -157,7 +153,7 @@ VALUES ('Depot Chief', '2021-04-27 11:28:38'),
 DROP TABLE IF EXISTS `employees`;
 CREATE TABLE `employees`
 (
-    `id`          INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `employee_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `first_name`  varchar(25)      NOT NULL,
     `last_name`   varchar(25)      NOT NULL,
     `rate`        DECIMAL(4, 2)    NOT NULL DEFAULT 5.00,
@@ -165,12 +161,11 @@ CREATE TABLE `employees`
     `birth_at`    DATETIME         NOT NULL,
     `hired_at`    DATETIME         NOT NULL,
     `updated_at`  DATETIME         NULL DEFAULT NULL,
-    `deleted_at`  DATETIME         NULL DEFAULT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`employee_id`)
 );
 
 ALTER TABLE `employees`
-    ADD CONSTRAINT `employees_fk0` FOREIGN KEY (`position_id`) REFERENCES `positions` (`id`) ON DELETE CASCADE;
+    ADD CONSTRAINT `employees_fk0` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
 
 INSERT INTO employees (first_name, last_name, rate, position_id, birth_at, hired_at)
 VALUES ('Avdei', 'Volodin', 50.00, 1, '1984-04-25 11:34:44', '2018-04-27 11:34:54'),
@@ -183,26 +178,28 @@ VALUES ('Avdei', 'Volodin', 50.00, 1, '1984-04-25 11:34:44', '2018-04-27 11:34:5
 
 # ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `timelogs`;
+
+# noinspection SpellCheckingInspection
 CREATE TABLE `timelogs`
 (
-    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `timelog_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `time_spent`   DECIMAL(2, 1)    NOT NULL DEFAULT 0.00,
     `employee_id`  INT(11) unsigned NOT NULL,
     `transport_id` INT(11) unsigned NOT NULL,
     `route_id`     INT(11) unsigned NOT NULL,
     `created_at`   DATETIME         NOT NULL DEFAULT '2018-04-12 09:00:00',
     `updated_at`   DATETIME         NULL DEFAULT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`timelog_id`)
 );
 
 ALTER TABLE `timelogs`
-    ADD CONSTRAINT `timelogs_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+    ADD CONSTRAINT `timelogs_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
 
 ALTER TABLE `timelogs`
-    ADD CONSTRAINT `timelogs_fk1` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`id`) ON DELETE CASCADE;
+    ADD CONSTRAINT `timelogs_fk1` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`transport_id`) ON DELETE CASCADE;
 
 ALTER TABLE `timelogs`
-    ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE CASCADE;
+    ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (`route_id`) REFERENCES `routes` (``) ON DELETE CASCADE;
 
 INSERT INTO timelogs (time_spent, employee_id, transport_id, route_id)
 VALUES (7.00, 3, 1, 1),
@@ -230,15 +227,15 @@ VALUES (7.00, 3, 1, 1),
 DROP TABLE IF EXISTS `salaries`;
 CREATE TABLE `salaries`
 (
-    `id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `salary_id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `total_amount` DECIMAL(8, 2)    NOT NULL DEFAULT 500.00,
     `employee_id`  INT(11) unsigned NOT NULL,
     `created_at`   DATE             NOT NULL DEFAULT '1994-03-03',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`salary_id`)
 );
 
 ALTER TABLE `salaries`
-    ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+    ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
 
 INSERT INTO `salaries` (total_amount, employee_id)
 VALUES (9100.00, 1),
