@@ -10,7 +10,7 @@ const DB_PASSWORD = 'root';
 
 const DEFAULT_POSITIONS = ['Depot Chief', 'Accountant Manager', 'Driver', 'Mechanic', 'Dispatcher', 'System Administrator', 'Office Manager', 'Route Operator', 'Controller', 'Depot Guardian', 'Operator Of Call-center'];
 const DEFAULT_FIRST_NAMES = ['Norbert','Damon','Laverna','Annice','Brandie','Emogene','Cinthia','Magaret','Daria','Ellyn','Rhoda','Debbra','Reid','Desire','Sueann','Shemeka','Julian','Winona','Billie','Michaela','Loren','Zoraida','Jacalyn','Lovella','Bernice','Kassie','Natalya','Whitley','Katelin','Danica','Willow','Noah','Tamera','Veronique','Cathrine','Jolynn','Meridith','Moira','Vince','Fransisca','Irvin','Catina','Jackelyn','Laurine','Freida','Torri','Terese','Dorothea','Landon','Emelia'];
-const DEFAULT_ROUTES_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '14', '15', '18', '1A', '7A'];
+const DEFAULT_ROUTES_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '14', '15', '18', '1A', '7A', '8P'];
 const DEFAULT_DATE_FORMAT = 'Y-m-d H:i:s';
 const DEFAULT_RANGE_PERIOD = 31556952;
 const DEFAULT_EMPLOYEES_QTY = 50;
@@ -279,7 +279,7 @@ class Fixtures
     /**
      * @throws Exception
      */
-    private function vehiclesGenerator(int $totalNum, string $serialNum = null): void
+    private function transportGenerator(int $totalNum, string $serialNum = null): void
     {
         $begin = microtime(true);
         $q = $this->connection->prepare(<<<SQL
@@ -383,8 +383,6 @@ class Fixtures
      *      'begin' => 1,  // Begin transports range value.
      *      'end'   => 10, // End transports range value.
      *    ],
-     *    'focused_on_id' => 5,         // Value of focused `transport_id` for generate the most many solded tickets.
-     *    'focused_tickets_qty' => 500, // Value of tickets quantity for focused `transport_id`.
      * ]
      * @throws Exception
      */
@@ -392,8 +390,7 @@ class Fixtures
     {
         $begin = microtime(true);
 
-        if(isset($firstId, $qty, $options['rangeIds'])) {
-            $randomValueFromRange = random_int($options['rangeIds']['begin'], $options['rangeIds']['end']);
+        if (isset($firstId, $qty, $options['rangeIds']['begin'], $options['rangeIds']['end'])) {
             $q = $this->connection->prepare(<<<SQL
                 INSERT INTO `transport_tickets` (transport_id, ticket_id, sold_at)
                 VALUES (:transportId, :ticketId, :soldAt);
@@ -401,24 +398,14 @@ class Fixtures
             );
 
             for ($id = $firstId; $id < $qty; $id++) {
-                echo "Ticket [$id] from [$qty] tickets.\n";
+                $randomValueFromRange = random_int($options['rangeIds']['begin'], $options['rangeIds']['end']);
+                echo "Ticket [$id] from [$qty] tickets for transport $randomValueFromRange\n";
 
-                if ($randomValueFromRange === $options['focused_on_id']) {
-                    while ($id <= $options['focused_tickets_qty']) {
-                        $q->execute([
-                            'transportId' => $options['focused_on_id'],
-                            'ticketId' => $id,
-                            'soldAt' => $this->randomDateByRange(5, 4),
-                        ]);
-                        $id++;
-                    }
-                } else {
-                    $q->execute([
-                        'transportId' => $randomValueFromRange,
-                        'ticketId' => $id,
-                        'soldAt' => $this->randomDateByRange(5, 4),
-                    ]);
-                }
+                $q->execute([
+                    'transportId' => $randomValueFromRange,
+                    'ticketId' => $id,
+                    'soldAt' => $this->randomDateByRange(5, 4),
+                ]);
             }
             $this->printExecTime($begin, '`transport_tickets` generation time: ');
         }
@@ -434,22 +421,20 @@ class Fixtures
                 'begin' => 1,
                 'end' => 10,
             ],
-            'focused_on_id' => 5,
-            'focused_tickets_qty' => 500,
         ];
 
         try {
         //------ TCL ---------------------------------------------------------------------------------------------------
             $this->connection->beginTransaction();
-            $this->createTables();
+//            $this->createTables();
 
             //------ DML: SEEDING DATA TO DATABASE TABLES --------------------------------------------------------------
-            $this->routesGenerator(DEFAULT_ROUTES_LIST);
-            $this->vehiclesGenerator(45);
-            $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
+//            $this->routesGenerator(DEFAULT_ROUTES_LIST);
+//            $this->transportGenerator(45);
+//            $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
             $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $options);
-            $this->generatePositions(DEFAULT_POSITIONS);
-            $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
+//            $this->generatePositions(DEFAULT_POSITIONS);
+//            $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
 
             $this->connection->commit();
         } catch (Exception $e) {
