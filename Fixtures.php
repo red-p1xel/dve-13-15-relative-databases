@@ -279,7 +279,7 @@ class Fixtures
     /**
      * @throws Exception
      */
-    private function transportGenerator(int $totalNum, string $serialNum = null): void
+    private function transportGenerator(int $qty, string $serialNum = null): void
     {
         $begin = microtime(true);
         $q = $this->connection->prepare(<<<SQL
@@ -287,7 +287,7 @@ class Fixtures
                 VALUES (:serialNum, :createdAt)
             SQL
         );
-        for ($i = 0; $i < $totalNum; $i++) {
+        for ($i = 0; $i < $qty; $i++) {
             $serialNum = $this->fakeSerialNumber(36);
             $createdAt = $this->randomDateByRange(34, 2);
             $q->bindParam(':createdAt', $createdAt);
@@ -347,26 +347,26 @@ class Fixtures
      * @throws Exception
      * @noinspection PhpSameParameterValueInspection
      */
-    private function generateEmployees(int $recordsCount, int $positionId = 3): void
+    private function generateEmployees(int $qty, int $positionId = 3): void
     {
         $begin = microtime(true);
-        $firstName = $lastName = $birthAt = $hiredAt = null;
+        $firstName = $lastName = $dateOfBirth = $hiredAt = null;
 
         $q = $this->connection->prepare(<<<SQL
-            INSERT INTO employees (first_name, last_name, rate, position_id, birth_at, hired_at)
-            VALUES (:firstName, :lastName, 10.00, $positionId, :birthAt, :hiredAt);
+            INSERT INTO employees (first_name, last_name, rate, position_id, date_of_birth, hired_at)
+            VALUES (:firstName, :lastName, 10.00, $positionId, :dateOfBirth, :hiredAt);
         SQL
         );
 
         $q->bindParam(':firstName', $firstName);
         $q->bindParam(':lastName', $lastName);
-        $q->bindParam(':birthAt', $birthAt);
+        $q->bindParam(':dateOfBirth', $dateOfBirth);
         $q->bindParam(':hiredAt', $hiredAt);
 
-        for ($id = 0; $id < $recordsCount; $id++) {
+        for ($id = 0; $id < $qty; $id++) {
             $firstName = $this->randomFirstName();
             $lastName = $this->randomLastName();
-            $birthAt = $this->randomDateByRange(45, 16);
+            $dateOfBirth = $this->randomDateByRange(45, 16);
             $hiredAt = $this->randomDateByRange(10, 1);
 
             $q->execute();
@@ -432,9 +432,9 @@ class Fixtures
 //            $this->routesGenerator(DEFAULT_ROUTES_LIST);
 //            $this->transportGenerator(45);
 //            $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
-            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $options);
-//            $this->generatePositions(DEFAULT_POSITIONS);
-//            $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
+//            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $options);
+            $this->generatePositions(DEFAULT_POSITIONS);
+            $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
 
             $this->connection->commit();
         } catch (Exception $e) {
