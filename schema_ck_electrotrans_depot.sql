@@ -18,6 +18,8 @@ CREATE TABLE `transports`
     PRIMARY KEY (`transport_id`)
 );
 
+CREATE UNIQUE INDEX transport_serial_index ON `transports` (serial DESC);
+
 INSERT INTO `transports` (serial, created_at)
 VALUES ('7c69d2b4-a906-11eb-bf69-0242ac11000a', '2000-04-27 09:35:00'),
        ('e8bf1330-a906-11eb-bf69-0242ac11000a', '2000-04-27 09:35:00'),
@@ -37,14 +39,15 @@ VALUES ('7c69d2b4-a906-11eb-bf69-0242ac11000a', '2000-04-27 09:35:00'),
 DROP TABLE IF EXISTS `tickets`;
 CREATE TABLE `tickets`
 (
-    `ticket_id`         BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `ticket_id`  BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
     `code`       VARCHAR(2)          NOT NULL DEFAULT 'AC',
-    `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 4.00,
+    `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 5.00,
     `created_at` DATETIME            NOT NULL,
     PRIMARY KEY (`ticket_id`)
 );
 
 ALTER TABLE `tickets` AUTO_INCREMENT = 10000;
+CREATE INDEX ticket_code_index ON `tickets` (code DESC);
 INSERT INTO `tickets` (created_at)
 VALUES ('2000-01-01 03:00:00'),
        ('2000-01-01 03:00:00'),
@@ -67,6 +70,7 @@ VALUES ('2000-01-01 03:00:00'),
        ('2000-01-01 03:00:00'),
        ('2000-01-01 03:00:00');
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `transport_tickets`;
 CREATE TABLE `transport_tickets`
@@ -76,10 +80,8 @@ CREATE TABLE `transport_tickets`
     `sold_at`      DATETIME            NULL DEFAULT NULL
 );
 
-
 ALTER TABLE `transport_tickets`
     ADD CONSTRAINT `transport_tickets_fk0` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`transport_id`) ON DELETE NO ACTION;
-
 ALTER TABLE `transport_tickets`
     ADD CONSTRAINT `transport_tickets_fk1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`ticket_id`) ON DELETE NO ACTION;
 
@@ -137,44 +139,49 @@ CREATE TABLE `positions`
 (
     `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `title`       varchar(60)      NOT NULL UNIQUE,
+    `salary`      DECIMAL(8, 2)    NOT NULL DEFAULT 9000.00,
     `created_at`  DATETIME         NOT NULL,
     `updated_at`  DATETIME         NULL DEFAULT NULL,
     PRIMARY KEY (`position_id`)
 );
+CREATE UNIQUE INDEX position_title_index ON `positions` (title DESC);
 
-INSERT INTO `positions` (title, created_at)
-VALUES ('Depot Chief', '2021-04-27 11:28:38'),
-       ('Accountant Manager', '2021-04-27 11:28:38'),
-       ('Driver', '2021-04-27 11:28:38'),
-       ('Mechanic', '2021-04-27 11:28:38'),
-       ('Dispatcher', '2021-04-27 11:28:38');
+INSERT INTO `positions` (title, salary, created_at)
+VALUES ('Depot Chief', 20.000, '2021-04-27 11:28:38'),
+       ('Accountant Manager', 15.0000, '2021-04-27 11:28:38'),
+       ('Driver', 9.000 ,'2021-04-27 11:28:38'),
+       ('Mechanic', 12.000, '2021-04-27 11:28:38'),
+       ('Dispatcher', 8.000, '2021-04-27 11:28:38');
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `employees`;
 CREATE TABLE `employees`
 (
-    `employee_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
-    `first_name`  varchar(25)      NOT NULL,
-    `last_name`   varchar(25)      NOT NULL,
-    `rate`        DECIMAL(4, 2)    NOT NULL DEFAULT 5.00,
-    `position_id` INT(11) unsigned NOT NULL,
-    `birth_at`    DATETIME         NOT NULL,
-    `hired_at`    DATETIME         NOT NULL,
-    `updated_at`  DATETIME         NULL DEFAULT NULL,
+    `employee_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
+    `first_name`    varchar(25)      NOT NULL,
+    `last_name`     varchar(25)      NOT NULL,
+    `position_id`   INT(11) unsigned NOT NULL,
+    `date_of_birth` DATETIME         NOT NULL,
+    `hired_at`      DATETIME         NOT NULL,
+    `updated_at`    DATETIME         NULL DEFAULT NULL,
     PRIMARY KEY (`employee_id`)
 );
 
 ALTER TABLE `employees`
     ADD CONSTRAINT `employees_fk0` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
+CREATE INDEX employees_firstname_index ON `employees` (first_name DESC);
+CREATE INDEX employees_lastname_index ON `employees` (last_name DESC);
 
-INSERT INTO employees (first_name, last_name, rate, position_id, birth_at, hired_at)
-VALUES ('Avdei', 'Volodin', 50.00, 1, '1984-04-25 11:34:44', '2018-04-27 11:34:54'),
-       ('Nancy', 'Carter', 20.00, 2, '1986-02-17 11:34:44', '2018-04-27 11:34:54'),
-       ('Ruslana', 'Alexeeva', 15.00, 3, '1994-03-11 11:34:44', '2018-04-27 11:34:54'),
-       ('Nick', 'Gavrilov', 15.00, 3, '1980-01-01 11:34:44', '2018-04-27 11:34:54'),
-       ('Borislav', 'Zakharov', 25.00, 4, '1976-11-15 11:34:44', '2018-04-27 11:34:54'),
-       ('Dementi', 'Yermakov', 25.00, 4, '1984-03-22 11:34:44', '2018-04-27 11:34:54'),
-       ('Rodion', 'Bulgakov', 5.00, 5, '1993-09-01 11:34:44', '2018-04-27 11:34:54');
+INSERT INTO employees (first_name, last_name, position_id, date_of_birth, hired_at)
+VALUES ('Avdei', 'Volodin', 1, '1984-04-25 11:34:44', '2018-04-27 11:34:54'),
+       ('Nancy', 'Carter', 2, '1986-02-17 11:34:44', '2018-04-27 11:34:54'),
+       ('Ruslana', 'Alexeeva', 3, '1994-03-11 11:34:44', '2018-04-27 11:34:54'),
+       ('Nick', 'Gavrilov', 3, '1980-01-01 11:34:44', '2018-04-27 11:34:54'),
+       ('Borislav', 'Zakharov', 4, '1976-11-15 11:34:44', '2018-04-27 11:34:54'),
+       ('Dementi', 'Yermakov', 4, '1984-03-22 11:34:44', '2018-04-27 11:34:54'),
+       ('Rodion', 'Bulgakov', 5, '1993-09-01 11:34:44', '2018-04-27 11:34:54');
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `timelogs`;
@@ -199,7 +206,7 @@ ALTER TABLE `timelogs`
     ADD CONSTRAINT `timelogs_fk1` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`transport_id`) ON DELETE CASCADE;
 
 ALTER TABLE `timelogs`
-    ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (`route_id`) REFERENCES `routes` (``) ON DELETE CASCADE;
+    ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (`route_id`) REFERENCES `routes` (`route_id`) ON DELETE CASCADE;
 
 INSERT INTO timelogs (time_spent, employee_id, transport_id, route_id)
 VALUES (7.00, 3, 1, 1),
@@ -227,21 +234,23 @@ VALUES (7.00, 3, 1, 1),
 DROP TABLE IF EXISTS `salaries`;
 CREATE TABLE `salaries`
 (
-    `salary_id`           INT(11) unsigned NOT NULL AUTO_INCREMENT,
-    `total_amount` DECIMAL(8, 2)    NOT NULL DEFAULT 500.00,
+    `salary_id`    INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `employee_id`  INT(11) unsigned NOT NULL,
+    `position_id`  INT(11) unsigned NOT NULL DEFAULT 3,
     `created_at`   DATE             NOT NULL DEFAULT '1994-03-03',
     PRIMARY KEY (`salary_id`)
 );
 
 ALTER TABLE `salaries`
     ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
+ALTER TABLE `salaries`
+    ADD CONSTRAINT `salaries_fk1` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
 
-INSERT INTO `salaries` (total_amount, employee_id)
-VALUES (9100.00, 1),
-       (3640.00, 2),
-       (1050.00, 3),
-       (750.00, 4),
-       (4550.00, 5),
-       (910.00, 6),
-       (910.00, 7);
+INSERT INTO `salaries` (employee_id, position_id)
+VALUES (4, 3),
+       (3, 3),
+       (4, 3),
+       (4, 3),
+       (3, 3),
+       (4, 3),
+       (3, 3);

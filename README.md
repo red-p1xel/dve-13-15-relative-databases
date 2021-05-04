@@ -1,12 +1,6 @@
 Lesson 14: SQL-queries
 ======================
 
-## Add tables
-
-Add tickets and transport-tickets tables and add the test data for this tables.
-
-[*] Unique tickets generation *2017.1554498672*
-
 ## Make queries
 
 In case of this lesson need make next SQL-queries:
@@ -17,5 +11,42 @@ In case of this lesson need make next SQL-queries:
 - [*] Get total working days and total profit from this employee on his working days.
 - Get employees list born in the MAY month.
 - Count total years of working experience for any employee in the company.
-  https://app.hopin.com/events/magento-association-connect-2021/sessions/7f82c3a1-4081-43c0-84f0-d97e01b1f80b
-est with a php file, for example, I created a file phpinfo.php in /var/www/html/phpinfo.php with
+
+Lesson 15: SQL indexes and queries optimization
+===============================================
+
+## Execution time without indexes fields
+
+✅ `routes` generation time: 0.0091791152954102
+
+✅ `transports` generation time: 0.013545989990234
+
+✅ `tickets` generation time: 177.89625096321
+
+✅ `transport_tickets` generation time: 210.80657982826
+
+✅ `positions` generation time: 0.016829967498779
+
+✅ `employees` generation time: 0.019996881484985
+
+✅ `timelogs` generation time: 2.3890280723572
+
+✅ `salaries` generation time: 20.843318939209
+
+## Execution time with indexes fields
+
+✅ `routes` generation time: 0.0094318389892578
+
+✅ `transports` generation time: 0.014382839202881
+
+✅ `tickets` generation time: 182.93573713303
+
+✅ `transport_tickets` generation time: 226.01594018936
+
+✅ `positions` generation time: 0.0205979347229
+
+✅ `employees` generation time: 0.023145914077759
+
+✅ `timelogs` generation time: 2.7609720230103
+
+✅ `salaries` generation time: 24.263803005219

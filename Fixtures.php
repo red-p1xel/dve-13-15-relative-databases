@@ -1,4 +1,5 @@
-<?php /** @noinspection SpellCheckingInspection */
+<?php
+/** @noinspection SpellCheckingInspection */
 /** @noinspection PhpSameParameterValueInspection */
 declare(strict_types=1);
 
@@ -35,7 +36,7 @@ class Fixtures
             try {
                 $this->connection = $this->dbConnect();
             } catch (PDOException $e) {
-                if ($e->getCode() === 1049) {
+                if ($e->getCode() === 1049 || $e->getCode() === 1044) {
                     $this->connection = $this->createDatabase(DB_NAME);
                 }
             }
@@ -48,10 +49,10 @@ class Fixtures
 
 //    private function queryExec(string $query, int $recordsNum, array $params): void {}
 
-    private function printExecTime(float $begin, string $msg = null): void
+    private function printExecTime(float $begin, string $msg = null, $beforeCh = "\u{2705}"): void
     {
-        $time =  (microtime(true) - $begin) . "\n";
-        echo (null === $msg) ? "Total execution time: $time" : "$msg: $time";
+        $time = (microtime(true) - $begin) . "\n";
+        echo (null === $msg) ? "$beforeCh Total execution time: $time" : "$beforeCh $msg: $time";
     }
 
     private function randomFirstName(): string
@@ -102,19 +103,21 @@ class Fixtures
 
     private function createDatabase(string $name): PDO
     {
+        $q = <<<SQL
+            CREATE DATABASE IF NOT EXISTS `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+        SQL;
+
         try {
             $this->connection = new PDO("mysql:host=" .DB_HOST. ":" .DB_PORT, DB_USER, DB_PASSWORD);
-            $this->connection->exec("
-                CREATE DATABASE IF NOT EXISTS `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-            ") or die(print_r($this->connection->errorInfo(), true));
+            $this->connection->exec($q) or die(print_r($this->connection->errorInfo(), true));
         } catch (PDOException $e) {
-            die("DB ERROR: " . $e->getMessage());
+            die("\u{1F6A8} DB ERROR: " . $e->getMessage());
         }
 
         return $this->dbConnect();
     }
 
-    private function createTables(): bool
+    public function createTables(bool $indexes = false, bool $fk = false): bool
     {
         $firstId = DEFAULT_FIRST_TICKET_ID;
         $currentDT = $this->currentDT->format(DEFAULT_DATE_FORMAT);
@@ -124,6 +127,7 @@ class Fixtures
                 (
                     `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `title`       varchar(60)      NOT NULL UNIQUE,
+                    `salary`      DECIMAL(8, 2)    NOT NULL DEFAULT 9000.00,
                     `created_at`  DATETIME         NOT NULL DEFAULT '$currentDT',
                     `updated_at`  DATETIME         NULL DEFAULT NULL,
                     PRIMARY KEY (`position_id`)
@@ -132,14 +136,13 @@ class Fixtures
             'employees' => <<<SQL
                 CREATE TABLE IF NOT EXISTS employees
                 (
-                    `employee_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
-                    `first_name`  varchar(25)      NOT NULL,
-                    `last_name`   varchar(25)      NOT NULL,
-                    `rate`        DECIMAL(4, 2)    NOT NULL DEFAULT '1.00',
-                    `position_id` INT(11) unsigned NOT NULL,
-                    `birth_at`    DATETIME         NOT NULL DEFAULT '1986-05-01 09:45:00',
-                    `hired_at`    DATETIME         NOT NULL DEFAULT '2021-03-25 10:00:00',
-                    `updated_at`  DATETIME         NULL DEFAULT NULL,
+                    `employee_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `first_name`    varchar(25)      NOT NULL,
+                    `last_name`     varchar(25)      NOT NULL,
+                    `position_id`   INT(11) unsigned NOT NULL,
+                    `date_of_birth` DATETIME         NOT NULL DEFAULT '1986-05-01 09:45:00',
+                    `hired_at`      DATETIME         NOT NULL DEFAULT '2021-03-25 10:00:00',
+                    `updated_at`    DATETIME         NULL DEFAULT NULL,
                     PRIMARY KEY (`employee_id`)
                 );
                 SQL,
@@ -168,7 +171,7 @@ class Fixtures
                 (
                     `ticket_id`  BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `code`       VARCHAR(2)          NOT NULL DEFAULT 'AC',
-                    `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 4.00,
+                    `price`      DECIMAL(2, 1)       NOT NULL DEFAULT 5.00,
                     `created_at` DATETIME            NOT NULL DEFAULT '$currentDT',
                     PRIMARY KEY (`ticket_id`)
                 );
@@ -198,62 +201,89 @@ class Fixtures
                 CREATE TABLE IF NOT EXISTS salaries
                 (
                     `salary_id`    INT(11) unsigned NOT NULL AUTO_INCREMENT,
-                    `total_amount` DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
                     `employee_id`  INT(11) unsigned NOT NULL,
+                    `position_id`  INT(11) unsigned NOT NULL DEFAULT 3,
                     `created_at`   DATE             NOT NULL DEFAULT '1994-03-03',
                     PRIMARY KEY (`salary_id`)
                 );
                 SQL,
         ];
+        $this->connection->beginTransaction();
         foreach ($tables as $table => $sql) {
             $begin = microtime(true);
             $this->connection->prepare($sql)->execute(['firstId' => $firstId]);
-            $this->printExecTime($begin, "$table created");
+            $this->printExecTime($begin, "Table `$table` created");
             unset($tables[$table]);
         }
-
         $this->connection->prepare(<<<SQL
             ALTER TABLE tickets AUTO_INCREMENT = $firstId;
             SQL
         )->execute();
 
-//------ Create FK for database tables ---------------------------------------------------------------------------------
+//------ Create indexes for database tables ----------------------------------------------------------------------------
+        if (true === $indexes) {
+            $this->connection->prepare(<<<SQL
+            CREATE UNIQUE INDEX transport_serial_index ON `transports` (serial DESC);
+            SQL)->execute();
+            $this->connection->prepare(<<<SQL
+                CREATE INDEX ticket_code_index ON `tickets` (code DESC);
+            SQL)->execute();
+            $this->connection->prepare(<<<SQL
+                CREATE UNIQUE INDEX position_title_index ON `positions` (title DESC);
+            SQL)->execute();
+            $this->connection->prepare(<<<SQL
+                CREATE INDEX employees_firstname_index ON `employees` (first_name DESC);
+            SQL)->execute();
+            $this->connection->prepare(<<<SQL
+                CREATE INDEX employees_lastname_index ON `employees` (last_name DESC);
+            SQL)->execute();
+        }
 
-        $this->connection->prepare(<<<SQL
+//------ Create FK for database tables ---------------------------------------------------------------------------------
+        if (true === $fk) {
+            $this->connection->prepare(<<<SQL
             ALTER TABLE transport_tickets ADD CONSTRAINT `transport_tickets_fk0` FOREIGN KEY (transport_id)
                 REFERENCES transports (transport_id) ON DELETE NO ACTION;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
+            )->execute();
+            $this->connection->prepare(<<<SQL
                 ALTER TABLE transport_tickets  ADD CONSTRAINT `transport_tickets_fk1` FOREIGN KEY (ticket_id)
                     REFERENCES tickets (ticket_id) ON DELETE NO ACTION;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
+            )->execute();
+            $this->connection->prepare(<<<SQL
                 ALTER TABLE employees ADD CONSTRAINT `employees_fk0` FOREIGN KEY (position_id) 
                     REFERENCES positions (position_id) ON DELETE CASCADE;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
+            )->execute();
+            $this->connection->prepare(<<<SQL
                 ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk0` FOREIGN KEY (employee_id) 
                     REFERENCES employees (employee_id) ON DELETE CASCADE;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
+            )->execute();
+            $this->connection->prepare(<<<SQL
                 ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk1` FOREIGN KEY (transport_id) 
                     REFERENCES transports (transport_id) ON DELETE CASCADE;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
+            )->execute();
+            $this->connection->prepare(<<<SQL
                 ALTER TABLE timelogs ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (route_id) 
                     REFERENCES routes (route_id) ON DELETE CASCADE;
             SQL
-        )->execute();
-        $this->connection->prepare(<<<SQL
-                ALTER TABLE salaries ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (employee_id)
-                    REFERENCES employees (employee_id) ON DELETE CASCADE;
+            )->execute();
+            $this->connection->prepare(<<<SQL
+            ALTER TABLE `salaries`
+                ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
             SQL
-        )->execute();
+            )->execute();
+            $this->connection->prepare(<<<SQL
+            ALTER TABLE `salaries`
+                ADD CONSTRAINT `salaries_fk1` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
+            SQL
+            )->execute();
+        }
+
+        $this->connection->commit();
 
         return empty($tables);
     }
@@ -267,13 +297,15 @@ class Fixtures
             INSERT INTO `routes` (code, created_at) VALUES (:routeCode, :createdAt);
             SQL
         );
+        $this->connection->beginTransaction();
         foreach ($routes as $route) {
             $q->execute([
                 'routeCode' => $route,
                 'createdAt' => $this->currentDT->format(DEFAULT_DATE_FORMAT),
             ]);
         }
-        $this->printExecTime($begin, '`routes` generation time: ');
+        $this->connection->commit();
+        $this->printExecTime($begin, '`routes` generation time');
     }
 
     /**
@@ -287,15 +319,16 @@ class Fixtures
                 VALUES (:serialNum, :createdAt)
             SQL
         );
+        $q->bindParam(':createdAt', $createdAt);
+        $q->bindParam(':serialNum', $serialNum);
+        $this->connection->beginTransaction();
         for ($i = 0; $i < $qty; $i++) {
             $serialNum = $this->fakeSerialNumber(36);
             $createdAt = $this->randomDateByRange(34, 2);
-            $q->bindParam(':createdAt', $createdAt);
-            $q->bindParam(':serialNum', $serialNum);
             $q->execute();
         }
-
-        $this->printExecTime($begin, '`transports` generation time: ');
+        $this->connection->commit();
+        $this->printExecTime($begin, '`transports` generation time');
     }
 
     /**
@@ -304,19 +337,17 @@ class Fixtures
     private function ticketsGenerator(int $firstId, int $qty): void
     {
         $begin = microtime(true);
-
-        $totalQty = $qty + $firstId;
+        $createdAt = $this->currentDT->format(DEFAULT_DATE_FORMAT);
         $q = $this->connection->prepare(<<<SQL
                 INSERT INTO tickets (created_at) VALUES (:createdAt);
             SQL
         );
-
-        for ($i = 0; $i < $totalQty; $i++) {
-            $createdAt = $this->currentDT->format(DEFAULT_DATE_FORMAT);
-            $q->execute(['createdAt' => $createdAt]);
-        }
-
-        $this->printExecTime($begin);
+        $q->bindParam(':createdAt', $createdAt);
+        $this->connection->beginTransaction();
+        for ($i = 0, $totalQty = ($firstId + $qty); $i < $totalQty; $i++)
+            $q->execute();
+        $this->connection->commit();
+        $this->printExecTime($begin, '`tickets` generation time');
     }
 
     /**
@@ -335,12 +366,14 @@ class Fixtures
         $q->bindParam(':positionTitle', $positionTitle);
         $q->bindParam(':currentDate', $currentDate);
 
+        $this->connection->beginTransaction();
         foreach ($positions as $title) {
             $positionTitle = $title;
             $q->execute();
         }
+        $this->connection->commit();
 
-        $this->printExecTime($begin, '`positions` generation time: ');
+        $this->printExecTime($begin, '`positions` generation time');
     }
 
     /**
@@ -353,8 +386,8 @@ class Fixtures
         $firstName = $lastName = $dateOfBirth = $hiredAt = null;
 
         $q = $this->connection->prepare(<<<SQL
-            INSERT INTO employees (first_name, last_name, rate, position_id, date_of_birth, hired_at)
-            VALUES (:firstName, :lastName, 10.00, $positionId, :dateOfBirth, :hiredAt);
+            INSERT INTO employees (first_name, last_name, position_id, date_of_birth, hired_at)
+            VALUES (:firstName, :lastName, $positionId, :dateOfBirth, :hiredAt);
         SQL
         );
 
@@ -363,6 +396,7 @@ class Fixtures
         $q->bindParam(':dateOfBirth', $dateOfBirth);
         $q->bindParam(':hiredAt', $hiredAt);
 
+        $this->connection->beginTransaction();
         for ($id = 0; $id < $qty; $id++) {
             $firstName = $this->randomFirstName();
             $lastName = $this->randomLastName();
@@ -371,8 +405,8 @@ class Fixtures
 
             $q->execute();
         }
-
-        $this->printExecTime($begin, '`employees` generation time: ');
+        $this->connection->commit();
+        $this->printExecTime($begin, '`employees` generation time');
     }
 
     /**
@@ -389,54 +423,153 @@ class Fixtures
     private function transportTicketsGenerator(int $firstId, int $qty, array $options): void
     {
         $begin = microtime(true);
-
         if (isset($firstId, $qty, $options['rangeIds']['begin'], $options['rangeIds']['end'])) {
             $q = $this->connection->prepare(<<<SQL
                 INSERT INTO `transport_tickets` (transport_id, ticket_id, sold_at)
                 VALUES (:transportId, :ticketId, :soldAt);
                 SQL
             );
-
-            for ($id = $firstId; $id < $qty; $id++) {
+            $this->connection->beginTransaction();
+            for ($id = 0; $id < $qty; $id++) {
                 $randomValueFromRange = random_int($options['rangeIds']['begin'], $options['rangeIds']['end']);
-                echo "Ticket [$id] from [$qty] tickets for transport $randomValueFromRange\n";
-
                 $q->execute([
                     'transportId' => $randomValueFromRange,
-                    'ticketId' => $id,
+                    'ticketId' => $firstId + $id,
                     'soldAt' => $this->randomDateByRange(5, 4),
                 ]);
             }
-            $this->printExecTime($begin, '`transport_tickets` generation time: ');
+            $this->connection->commit();
         }
+        $this->printExecTime($begin, '`transport_tickets` generation time');
     }
 
-// TODO: Implement methods [`employeesTimelogs`, `employeesSalaries`] for accomplish fixture generator.
+    /**
+     * @param int $qty
+     * @param array $options = [
+     *     'employees_range' => [
+     *       'fromId' => 1,
+     *       'toId'   => 10,
+     *     ],
+     *     'transport_range' => [
+     *       'fromId' => 1,
+     *       'toId'   => 5,
+     *     ],
+     *     'date_range' => [
+     *       'min' => 2,
+     *       'max' => 1,
+     *     ],
+     * ]
+     * @throws Exception
+     */
+    private function timelogsGenerator(int $qty, array $options): void
+    {
+        $begin = microtime(true);
+        if (isset($qty, $options)) {
+            $q = $this->connection->prepare(<<<SQL
+                INSERT INTO timelogs (employee_id, transport_id, route_id, created_at)
+                VALUES (:employeeId, :transportId, :routeId, :createdAt);
+                SQL
+            );
+            $q->bindParam(':employeeId', $rndEmployee);
+            $q->bindParam(':transportId', $rndTransport);
+            $q->bindParam(':routeId', $rndRoute);
+            $q->bindParam(':createdAt', $rndDate);
+            $this->connection->beginTransaction();
+            for ($i = 0; $i < $qty; $i++) {
+                $rndEmployee = random_int($options['employees_range']['fromId'], $options['employees_range']['toId']);
+                $rndTransport = random_int($options['transport_range']['fromId'], $options['transport_range']['toId']);
+                $rndRoute = random_int(1, count(DEFAULT_ROUTES_LIST));
+                $rndDate = $this->randomDateByRange($options['date_range']['min'], $options['date_range']['max']);
+                $q->execute();
+            }
+            $this->connection->commit();
+        }
+        $this->printExecTime($begin, '`timelogs` generation time');
+    }
 
+    /**
+     * @param int $qty
+     * @param array $options = [
+     *     'position_id' => 3,
+     *     'employees_range' => [
+     *       'fromId' => 1,
+     *       'toId'   => 10,
+     *     ],
+     *     'date_range' => [
+     *       'min' => 2,
+     *       'max' => 1,
+     *     ],
+     * ]
+     * @throws Exception
+     */
+    private function salariesGenerator(int $qty, array $options): void
+    {
+        $begin = microtime(true);
+        if (isset($qty, $options)) {
+            $q = $this->connection->prepare(<<<SQL
+                    INSERT INTO `salaries` (employee_id, position_id, created_at)
+                    VALUES (:employeeId, :positionId, :createdAt);
+                SQL
+            );
+            $q->bindParam(':employeeId', $rndEmployeeId);
+            $q->bindParam(':positionId', $positionId);
+            $q->bindParam(':createdAt', $rndDate);
+            $this->connection->beginTransaction();
+            for ($i = 0; $i < $qty; $i++) {
+                $rndEmployeeId = random_int($options['employees_range']['fromId'], $options['employees_range']['toId']);
+                $rndDate = $this->randomDateByRange($options['date_range']['min'], $options['date_range']['max']);
+                $positionId = $options['position_id'];
+                $q->execute();
+            }
+            $this->connection->commit();
+        }
+        $this->printExecTime($begin, '`salaries` generation time');
+    }
 //----------------------------------------------------------------------------------------------------------------------
     public function generate(): void
     {
-        $options = [
+        $transportTicketsOptions = [
             'rangeIds' => [
                 'begin' => 1,
                 'end' => 10,
             ],
         ];
+        $timelogsOptions = [
+            'employees_range' => [
+                'fromId' => 1,
+                'toId' => 10,
+            ],
+            'transport_range' => [
+                'fromId' => 1,
+                'toId' => 5,
+            ],
+            'date_range' => [
+                'min' => 2,
+                'max' => 1,
+            ],
+        ];
+        $salariesOptions = [
+            'position_id' => 3,
+            'employees_range' => [
+                'fromId' => 1,
+                'toId' => 10,
+            ],
+            'date_range' => [
+                'min' => 2,
+                'max' => 1,
+            ],
 
+        ];
         try {
-        //------ TCL ---------------------------------------------------------------------------------------------------
-            $this->connection->beginTransaction();
-//            $this->createTables();
-
             //------ DML: SEEDING DATA TO DATABASE TABLES --------------------------------------------------------------
-//            $this->routesGenerator(DEFAULT_ROUTES_LIST);
-//            $this->transportGenerator(45);
-//            $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
-//            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $options);
+            $this->routesGenerator(DEFAULT_ROUTES_LIST);
+            $this->transportGenerator(45);
+            $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
+            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $transportTicketsOptions);
             $this->generatePositions(DEFAULT_POSITIONS);
             $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
-
-            $this->connection->commit();
+            $this->timelogsGenerator(10000, $timelogsOptions);
+            $this->salariesGenerator(DEFAULT_SALARIES_QTY, $salariesOptions);
         } catch (Exception $e) {
             $this->connection->rollBack();
             echo $e->getMessage();
@@ -445,4 +578,5 @@ class Fixtures
 }
 
 $fixturesGenerator = new Fixtures();
+$fixturesGenerator->createTables(true, true);
 $fixturesGenerator->generate();
