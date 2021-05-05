@@ -3,14 +3,14 @@
 /** @noinspection PhpSameParameterValueInspection */
 declare(strict_types=1);
 
-const DB_HOST ='127.0.0.1';
+const DB_HOST = '127.0.0.1';
 const DB_PORT = 3380;
 const DB_NAME = 'ck_electrotrance_depot';
 const DB_USER = 'root';
 const DB_PASSWORD = 'root';
 
 const DEFAULT_POSITIONS = ['Depot Chief', 'Accountant Manager', 'Driver', 'Mechanic', 'Dispatcher', 'System Administrator', 'Office Manager', 'Route Operator', 'Controller', 'Depot Guardian', 'Operator Of Call-center'];
-const DEFAULT_FIRST_NAMES = ['Norbert','Damon','Laverna','Annice','Brandie','Emogene','Cinthia','Magaret','Daria','Ellyn','Rhoda','Debbra','Reid','Desire','Sueann','Shemeka','Julian','Winona','Billie','Michaela','Loren','Zoraida','Jacalyn','Lovella','Bernice','Kassie','Natalya','Whitley','Katelin','Danica','Willow','Noah','Tamera','Veronique','Cathrine','Jolynn','Meridith','Moira','Vince','Fransisca','Irvin','Catina','Jackelyn','Laurine','Freida','Torri','Terese','Dorothea','Landon','Emelia'];
+const DEFAULT_FIRST_NAMES = ['Norbert', 'Damon', 'Laverna', 'Annice', 'Brandie', 'Emogene', 'Cinthia', 'Magaret', 'Daria', 'Ellyn', 'Rhoda', 'Debbra', 'Reid', 'Desire', 'Sueann', 'Shemeka', 'Julian', 'Winona', 'Billie', 'Michaela', 'Loren', 'Zoraida', 'Jacalyn', 'Lovella', 'Bernice', 'Kassie', 'Natalya', 'Whitley', 'Katelin', 'Danica', 'Willow', 'Noah', 'Tamera', 'Veronique', 'Cathrine', 'Jolynn', 'Meridith', 'Moira', 'Vince', 'Fransisca', 'Irvin', 'Catina', 'Jackelyn', 'Laurine', 'Freida', 'Torri', 'Terese', 'Dorothea', 'Landon', 'Emelia'];
 const DEFAULT_ROUTES_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '14', '15', '18', '1A', '7A', '8P'];
 const DEFAULT_DATE_FORMAT = 'Y-m-d H:i:s';
 const DEFAULT_RANGE_PERIOD = 31556952;
@@ -36,8 +36,16 @@ class Fixtures
             try {
                 $this->connection = $this->dbConnect();
             } catch (PDOException $e) {
-                if ($e->getCode() === 1049 || $e->getCode() === 1044) {
+                if ($e->getCode() === 1049) {
                     $this->connection = $this->createDatabase(DB_NAME);
+                } else {
+                    $stacktrace = [
+                        'msg' => $e->getMessage(),
+                        'info' => $e->errorInfo,
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ];
+                    throw new Exception(print_r($stacktrace), $e->getCode());
                 }
             }
 
@@ -62,7 +70,7 @@ class Fixtures
 
     private function randomLastName(): string
     {
-        $randomLastNames = ['Mischke','Serna','Pingree','Mcnaught','Pepper','Schildgen','Mongold','Wrona','Geddes','Lanz','Fetzer','Schroeder','Block','Mayoral','Fleishman','Roberie','Latson','Lupo','Motsinger','Drews','Coby','Redner','Culton','Howe','Stoval','Michaud','Mote','Menjivar','Wiers','Paris','Grisby','Noren','Damron','Kazmierczak','Haslett','Guillemette','Buresh','Center','Kucera','Catt','Badon','Grumbles','Antes','Byron','Volkman','Klemp','Pekar','Pecora','Schewe','Ramage'];
+        $randomLastNames = ['Mischke', 'Serna', 'Pingree', 'Mcnaught', 'Pepper', 'Schildgen', 'Mongold', 'Wrona', 'Geddes', 'Lanz', 'Fetzer', 'Schroeder', 'Block', 'Mayoral', 'Fleishman', 'Roberie', 'Latson', 'Lupo', 'Motsinger', 'Drews', 'Coby', 'Redner', 'Culton', 'Howe', 'Stoval', 'Michaud', 'Mote', 'Menjivar', 'Wiers', 'Paris', 'Grisby', 'Noren', 'Damron', 'Kazmierczak', 'Haslett', 'Guillemette', 'Buresh', 'Center', 'Kucera', 'Catt', 'Badon', 'Grumbles', 'Antes', 'Byron', 'Volkman', 'Klemp', 'Pekar', 'Pecora', 'Schewe', 'Ramage'];
         return $randomLastNames[array_rand($randomLastNames)];
     }
 
@@ -91,14 +99,14 @@ class Fixtures
     private function fakeSerialNumber(int $len): string
     {
         $x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        return substr(str_shuffle(str_repeat($x, (int) round($len / strlen($x), 0))),1, $len);
+        return substr(str_shuffle(str_repeat($x, (int)round($len / strlen($x), 0))), 1, $len);
     }
 
 //---- DDL -------------------------------------------------------------------------------------------------------------
 
     private function dbConnect(): PDO
     {
-        return new PDO("mysql:host=".DB_HOST.":".DB_PORT.";dbname=".DB_NAME, DB_USER, DB_PASSWORD, []);
+        return new PDO("mysql:host=" . DB_HOST . ":" . DB_PORT . ";dbname=" . DB_NAME, DB_USER, DB_PASSWORD, []);
     }
 
     private function createDatabase(string $name): PDO
@@ -108,7 +116,7 @@ class Fixtures
         SQL;
 
         try {
-            $this->connection = new PDO("mysql:host=" .DB_HOST. ":" .DB_PORT, DB_USER, DB_PASSWORD);
+            $this->connection = new PDO("mysql:host=" . DB_HOST . ":" . DB_PORT, DB_USER, DB_PASSWORD);
             $this->connection->exec($q) or die(print_r($this->connection->errorInfo(), true));
         } catch (PDOException $e) {
             die("\u{1F6A8} DB ERROR: " . $e->getMessage());
@@ -156,7 +164,7 @@ class Fixtures
                     PRIMARY KEY (`transport_id`)
                 );
                 SQL,
-            'routes' =>  <<<SQL
+            'routes' => <<<SQL
                 CREATE TABLE IF NOT EXISTS routes
                 (
                     `route_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -166,7 +174,7 @@ class Fixtures
                     PRIMARY KEY (`route_id`)
                 );
                 SQL,
-            'tickets' =>  <<<SQL
+            'tickets' => <<<SQL
                 CREATE TABLE IF NOT EXISTS tickets
                 (
                     `ticket_id`  BIGINT(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -176,7 +184,7 @@ class Fixtures
                     PRIMARY KEY (`ticket_id`)
                 );
                 SQL,
-            'transport_tickets' =>  <<<SQL
+            'transport_tickets' => <<<SQL
                 CREATE TABLE IF NOT EXISTS transport_tickets
                 (
                     `transport_id` INT(11) unsigned    NOT NULL,
@@ -184,7 +192,7 @@ class Fixtures
                     `sold_at`      DATETIME            NULL DEFAULT NULL
                 );
                 SQL,
-            'timelogs' =>  <<<SQL
+            'timelogs' => <<<SQL
                 CREATE TABLE IF NOT EXISTS timelogs
                 (
                     `timelog_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -197,7 +205,7 @@ class Fixtures
                     PRIMARY KEY (`timelog_id`)
                 );
                 SQL,
-            'salaries' =>  <<<SQL
+            'salaries' => <<<SQL
                 CREATE TABLE IF NOT EXISTS salaries
                 (
                     `salary_id`    INT(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -224,19 +232,24 @@ class Fixtures
         if (true === $indexes) {
             $this->connection->prepare(<<<SQL
             CREATE UNIQUE INDEX transport_serial_index ON `transports` (serial DESC);
-            SQL)->execute();
+            SQL
+            )->execute();
             $this->connection->prepare(<<<SQL
                 CREATE INDEX ticket_code_index ON `tickets` (code DESC);
-            SQL)->execute();
+            SQL
+            )->execute();
             $this->connection->prepare(<<<SQL
                 CREATE UNIQUE INDEX position_title_index ON `positions` (title DESC);
-            SQL)->execute();
+            SQL
+            )->execute();
             $this->connection->prepare(<<<SQL
                 CREATE INDEX employees_firstname_index ON `employees` (first_name DESC);
-            SQL)->execute();
+            SQL
+            )->execute();
             $this->connection->prepare(<<<SQL
                 CREATE INDEX employees_lastname_index ON `employees` (last_name DESC);
-            SQL)->execute();
+            SQL
+            )->execute();
         }
 
 //------ Create FK for database tables ---------------------------------------------------------------------------------
@@ -272,13 +285,13 @@ class Fixtures
             SQL
             )->execute();
             $this->connection->prepare(<<<SQL
-            ALTER TABLE `salaries`
-                ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
+                ALTER TABLE `salaries`
+                    ADD CONSTRAINT `salaries_fk0` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE;
             SQL
             )->execute();
             $this->connection->prepare(<<<SQL
-            ALTER TABLE `salaries`
-                ADD CONSTRAINT `salaries_fk1` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
+                ALTER TABLE `salaries`
+                    ADD CONSTRAINT `salaries_fk1` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE CASCADE;
             SQL
             )->execute();
         }
@@ -465,22 +478,25 @@ class Fixtures
     {
         $begin = microtime(true);
         if (isset($qty, $options)) {
-            $q = $this->connection->prepare(<<<SQL
+            $timelogsQuery = $this->connection->prepare(<<<SQL
                 INSERT INTO timelogs (employee_id, transport_id, route_id, created_at)
                 VALUES (:employeeId, :transportId, :routeId, :createdAt);
                 SQL
             );
-            $q->bindParam(':employeeId', $rndEmployee);
-            $q->bindParam(':transportId', $rndTransport);
-            $q->bindParam(':routeId', $rndRoute);
-            $q->bindParam(':createdAt', $rndDate);
+
+            $timelogsQuery->bindParam(':employeeId', $rndEmployee);
+            $timelogsQuery->bindParam(':transportId', $rndTransport);
+            $timelogsQuery->bindParam(':routeId', $rndRoute);
+            $timelogsQuery->bindParam(':createdAt', $rndDate);
+
             $this->connection->beginTransaction();
             for ($i = 0; $i < $qty; $i++) {
                 $rndEmployee = random_int($options['employees_range']['fromId'], $options['employees_range']['toId']);
                 $rndTransport = random_int($options['transport_range']['fromId'], $options['transport_range']['toId']);
                 $rndRoute = random_int(1, count(DEFAULT_ROUTES_LIST));
                 $rndDate = $this->randomDateByRange($options['date_range']['min'], $options['date_range']['max']);
-                $q->execute();
+
+                $timelogsQuery->execute();
             }
             $this->connection->commit();
         }
@@ -525,16 +541,17 @@ class Fixtures
         }
         $this->printExecTime($begin, '`salaries` generation time');
     }
+
 //----------------------------------------------------------------------------------------------------------------------
     public function generate(): void
     {
-        $transportTicketsOptions = [
+        $transportTicketsOpt = [
             'rangeIds' => [
                 'begin' => 1,
                 'end' => 10,
             ],
         ];
-        $timelogsOptions = [
+        $timelogsOpt = [
             'employees_range' => [
                 'fromId' => 1,
                 'toId' => 10,
@@ -548,7 +565,7 @@ class Fixtures
                 'max' => 1,
             ],
         ];
-        $salariesOptions = [
+        $salariesOpt = [
             'position_id' => 3,
             'employees_range' => [
                 'fromId' => 1,
@@ -565,11 +582,11 @@ class Fixtures
             $this->routesGenerator(DEFAULT_ROUTES_LIST);
             $this->transportGenerator(45);
             $this->ticketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY);
-            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $transportTicketsOptions);
+            $this->transportTicketsGenerator(DEFAULT_FIRST_TICKET_ID, DEFAULT_TICKETS_QTY, $transportTicketsOpt);
             $this->generatePositions(DEFAULT_POSITIONS);
             $this->generateEmployees(DEFAULT_EMPLOYEES_QTY);
-            $this->timelogsGenerator(10000, $timelogsOptions);
-            $this->salariesGenerator(DEFAULT_SALARIES_QTY, $salariesOptions);
+            $this->timelogsGenerator(10000, $timelogsOpt);
+            $this->salariesGenerator(DEFAULT_SALARIES_QTY, $salariesOpt);
         } catch (Exception $e) {
             $this->connection->rollBack();
             echo $e->getMessage();

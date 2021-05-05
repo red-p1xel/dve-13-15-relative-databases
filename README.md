@@ -35,18 +35,18 @@ Lesson 15: SQL indexes and queries optimization
 
 ## Execution time with indexes fields
 
-✅ `routes` generation time: 0.0094318389892578
+✅ `routes` generation time: 0.0094509124755859
 
-✅ `transports` generation time: 0.014382839202881
+✅ `transports` generation time: 0.020349979400635
 
-✅ `tickets` generation time: 182.93573713303
+✅ `tickets` generation time: 199.21988797188
 
-✅ `transport_tickets` generation time: 226.01594018936
+✅ `transport_tickets` generation time: 241.34361004829
 
-✅ `positions` generation time: 0.0205979347229
+✅ `positions` generation time: 0.010597944259644
 
-✅ `employees` generation time: 0.023145914077759
+✅ `employees` generation time: 0.022233963012695
 
-✅ `timelogs` generation time: 2.7609720230103
+✅ `timelogs` and `transport_timelogs` generation time: 5.4249279499054
 
-✅ `salaries` generation time: 24.263803005219
+✅ `salaries` generation time: 24.915431022644
