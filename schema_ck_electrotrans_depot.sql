@@ -232,43 +232,6 @@ VALUES (7.00, 3, 1, 1),
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `transport_timelogs`;
-
-CREATE TABLE `transport_timelogs`
-(
-    `transport_id` INT(11) unsigned NOT NULL,
-    `timelog_id`   INT(11) unsigned NOT NULL
-);
-
-ALTER TABLE `transport_timelogs`
-    ADD CONSTRAINT `transport_timelogs_fk0` FOREIGN KEY (`transport_id`) REFERENCES `transports` (`transport_id`) ON DELETE NO ACTION;
-ALTER TABLE `transport_timelogs`
-    ADD CONSTRAINT `transport_timelogs_fk1` FOREIGN KEY (`timelog_id`) REFERENCES `timelogs` (`timelog_id`) ON DELETE NO ACTION;
-
-INSERT INTO `transport_timelogs` (transport_id, timelog_id)
-VALUES (1, 1),
-       (2, 2),
-       (3, 3),
-       (4, 4),
-       (5, 5),
-       (3, 6),
-       (2, 7),
-       (3, 8),
-       (1, 9),
-       (4, 10),
-       (4, 11),
-       (3, 12),
-       (2, 13),
-       (4, 14),
-       (4, 15),
-       (2, 16),
-       (1, 17),
-       (4, 18),
-       (4, 19),
-       (1, 20);
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `salaries`;
 CREATE TABLE `salaries`
 (
