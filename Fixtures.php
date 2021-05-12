@@ -23,6 +23,7 @@ class Fixtures
 {
     private ?PDO $connection = null;
     private DateTime $currentDT;
+    private array $driverTimelogs = [];
 
     /**
      * Fixtures constructor.
@@ -51,6 +52,14 @@ class Fixtures
 
             $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
+    }
+
+    protected function addDriverTimelog(int $employeeId, string $dateTime)
+    {
+
+        $this->driverTimelogs[$employeeId][] = $dateTime;
+
+        return $this->driverTimelogs;
     }
 
 //---- HELPERS ---------------------------------------------------------------------------------------------------------
@@ -102,6 +111,12 @@ class Fixtures
         return substr(str_shuffle(str_repeat($x, (int)round($len / strlen($x), 0))), 1, $len);
     }
 
+    /** @throws Exception */
+    private function randomFloat(int $from, int $to, int $accuracy = 2): float
+    {
+        return round(random_int($from, $to - 1) + (random_int(0, PHP_INT_MAX - 1) / PHP_INT_MAX), $accuracy);
+    }
+
 //---- DDL -------------------------------------------------------------------------------------------------------------
 
     private function dbConnect(): PDO
@@ -135,7 +150,6 @@ class Fixtures
                 (
                     `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
                     `title`       varchar(60)      NOT NULL UNIQUE,
-                    `salary`      DECIMAL(8, 2)    NOT NULL DEFAULT 9000.00,
                     `created_at`  DATETIME         NOT NULL DEFAULT '$currentDT',
                     `updated_at`  DATETIME         NULL DEFAULT NULL,
                     PRIMARY KEY (`position_id`)
@@ -148,6 +162,7 @@ class Fixtures
                     `first_name`    varchar(25)      NOT NULL,
                     `last_name`     varchar(25)      NOT NULL,
                     `position_id`   INT(11) unsigned NOT NULL,
+                    `income`        DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
                     `date_of_birth` DATETIME         NOT NULL DEFAULT '1986-05-01 09:45:00',
                     `hired_at`      DATETIME         NOT NULL DEFAULT '2021-03-25 10:00:00',
                     `updated_at`    DATETIME         NULL DEFAULT NULL,
@@ -196,7 +211,7 @@ class Fixtures
                 CREATE TABLE IF NOT EXISTS timelogs
                 (
                     `timelog_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
-                    `time_spent`   DECIMAL(2, 1)    NOT NULL DEFAULT 7.00,
+                    `daily_income` DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
                     `employee_id`  INT(11) unsigned NOT NULL,
                     `transport_id` INT(11) unsigned NOT NULL,
                     `route_id`     INT(11) unsigned NOT NULL,
@@ -399,13 +414,14 @@ class Fixtures
         $firstName = $lastName = $dateOfBirth = $hiredAt = null;
 
         $q = $this->connection->prepare(<<<SQL
-            INSERT INTO employees (first_name, last_name, position_id, date_of_birth, hired_at)
-            VALUES (:firstName, :lastName, $positionId, :dateOfBirth, :hiredAt);
+            INSERT INTO employees (first_name, last_name, position_id, income, date_of_birth, hired_at)
+            VALUES (:firstName, :lastName, $positionId, :income, :dateOfBirth, :hiredAt);
         SQL
         );
 
         $q->bindParam(':firstName', $firstName);
         $q->bindParam(':lastName', $lastName);
+        $q->bindParam(':income', $income);
         $q->bindParam(':dateOfBirth', $dateOfBirth);
         $q->bindParam(':hiredAt', $hiredAt);
 
@@ -413,6 +429,7 @@ class Fixtures
         for ($id = 0; $id < $qty; $id++) {
             $firstName = $this->randomFirstName();
             $lastName = $this->randomLastName();
+            $income = $this->randomFloat(10000, 70000);
             $dateOfBirth = $this->randomDateByRange(45, 16);
             $hiredAt = $this->randomDateByRange(10, 1);
 
@@ -479,25 +496,39 @@ class Fixtures
         $begin = microtime(true);
         if (isset($qty, $options)) {
             $timelogsQuery = $this->connection->prepare(<<<SQL
-                INSERT INTO timelogs (employee_id, transport_id, route_id, created_at)
-                VALUES (:employeeId, :transportId, :routeId, :createdAt);
+                INSERT INTO timelogs (daily_income, employee_id, transport_id, route_id, created_at)
+                VALUES (:dailyIncome, :employeeId, :transportId, :routeId, :createdAt);
                 SQL
             );
 
+            $timelogsQuery->bindParam(':dailyIncome', $dailyIncome);
             $timelogsQuery->bindParam(':employeeId', $rndEmployee);
             $timelogsQuery->bindParam(':transportId', $rndTransport);
             $timelogsQuery->bindParam(':routeId', $rndRoute);
             $timelogsQuery->bindParam(':createdAt', $rndDate);
 
             $this->connection->beginTransaction();
-            for ($i = 0; $i < $qty; $i++) {
+            for ($i = 1; $i <= $qty; $i++) {
+                $dailyIncome = $this->randomFloat(10000, 70000);
                 $rndEmployee = random_int($options['employees_range']['fromId'], $options['employees_range']['toId']);
                 $rndTransport = random_int($options['transport_range']['fromId'], $options['transport_range']['toId']);
                 $rndRoute = random_int(1, count(DEFAULT_ROUTES_LIST));
                 $rndDate = $this->randomDateByRange($options['date_range']['min'], $options['date_range']['max']);
 
-                $timelogsQuery->execute();
+                if (isset($this->driverTimelogs[$rndEmployee])) {
+                    if (!in_array($rndDate, $this->driverTimelogs[$rndEmployee], true)) {
+                        print_r($this->driverTimelogs);
+                        $this->addDriverTimelog($rndEmployee, $rndDate);
+                        $timelogsQuery->execute();
+                    } else {
+                        --$i;
+                    }
+                } else {
+                    $this->addDriverTimelog($rndEmployee, $rndDate);
+                    $timelogsQuery->execute();
+                }
             }
+
             $this->connection->commit();
         }
         $this->printExecTime($begin, '`timelogs` generation time');

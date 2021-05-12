@@ -8,43 +8,31 @@ FROM employees
 GROUP BY last_name;
 
 
-###############################################################################
+##############################################################################
 # Get average salary by employee
-#------------------------------------------------------------------------------
-# 50 rows retrieved starting from 1 in 49 ms (execution: 5 ms, fetching: 44 ms)
-###############################################################################
-SELECT e.employee_id,
-       AVG (p.salary) AS "Employee salary (avg.)"
-FROM employees AS e
-         INNER JOIN positions AS p ON e.position_id = p.position_id
-GROUP BY e.employee_id, p.salary
-ORDER BY p.salary desc;
-
+#-----------------------------------------------------------------------------
+# 1 row retrieved starting from 1 in 70 ms (execution: 4 ms, fetching: 66 ms)
+##############################################################################
+SELECT AVG (income) Avg_Employees_Salaries FROM employees;
 
 ###################################################################################################
 # Get average and highest current salary by position (store current salary in the employees table)
 #--------------------------------------------------------------------------------------------------
 # 1 row retrieved starting from 1 in 33 ms (execution: 5 ms, fetching: 28 ms)
 ###################################################################################################
-SELECT e.position_id,
-       AVG (p.salary) AS "Current salary (avg.)"
-FROM employees AS e
-         INNER JOIN positions AS p ON e.position_id = p.position_id
-GROUP BY e.position_id, p.salary
-ORDER BY p.salary desc;
+SELECT position_id, AVG(income) AS Avg_employee_salary_by_position, MAX(income) AS Highest_employee_salary
+FROM employees
+GROUP BY position_id;
 
 
 ################################################################################
 # Get all employees list with average salary sorted by last name
 #-------------------------------------------------------------------------------
-# 50 rows retrieved starting from 1 in 38 ms (execution: 4 ms, fetching: 34 ms)
+# 33 rows retrieved starting from 1 in 49 ms (execution: 5 ms, fetching: 44 ms)
 ################################################################################
-SELECT e.employee_id, e.last_name, e.first_name, e.date_of_birth,
-       AVG(p.salary) AS "Salary (avg.)"
-FROM employees AS e
-         INNER JOIN positions AS p ON e.position_id = p.position_id
-GROUP BY e.employee_id, e.last_name
-ORDER BY e.last_name;
+SELECT last_name, AVG(income) AS Avg_salary FROM employees
+GROUP BY last_name
+ORDER BY last_name;
 
 
 ###################################################################################
@@ -52,15 +40,12 @@ ORDER BY e.last_name;
 #----------------------------------------------------------------------------------
 # 10 rows retrieved starting from 1 in 454 ms (execution: 430 ms, fetching: 24 ms)
 ###################################################################################
-SELECT e.employee_id, p.position_id, e.last_name, e.first_name,
-       COUNT(DISTINCT DATE_FORMAT(s.created_at, '%Y-%m')) * p.salary AS total_employee_incomes,
-       COUNT(DISTINCT DATE_FORMAT(s.created_at, '%Y-%m'))            AS total_working_months
-FROM employees AS e
-         INNER JOIN positions AS p ON e.position_id = p.position_id
-         INNER JOIN salaries s ON e.employee_id = s.employee_id
-GROUP BY e.employee_id
-ORDER BY e.employee_id;
-
+SELECT employee_id,
+       COUNT(employee_id) AS total_working_days,
+       SUM(daily_income) AS total_income
+FROM timelogs
+GROUP BY employee_id
+ORDER BY total_working_days asc;
 
 ###############################################################################################################
 # Get overall (total) income by transport, average income and a number of working days in the descending order
