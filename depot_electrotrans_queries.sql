@@ -13,26 +13,16 @@ GROUP BY last_name;
 #-----------------------------------------------------------------------------
 # 1 row retrieved starting from 1 in 70 ms (execution: 4 ms, fetching: 66 ms)
 ##############################################################################
-SELECT AVG (income) Avg_Employees_Salaries FROM employees;
+SELECT AVG (income) avg_employees_salaries FROM employees;
 
 ###################################################################################################
 # Get average and highest current salary by position (store current salary in the employees table)
 #--------------------------------------------------------------------------------------------------
 # 1 row retrieved starting from 1 in 33 ms (execution: 5 ms, fetching: 28 ms)
 ###################################################################################################
-SELECT position_id, AVG(income) AS Avg_employee_salary_by_position, MAX(income) AS Highest_employee_salary
+SELECT position_id, AVG(income) AS avg_employee_salary_by_position, MAX(income) AS highest_employee_salary
 FROM employees
 GROUP BY position_id;
-
-
-################################################################################
-# Get all employees list with average salary sorted by last name
-#-------------------------------------------------------------------------------
-# 33 rows retrieved starting from 1 in 49 ms (execution: 5 ms, fetching: 44 ms)
-################################################################################
-SELECT last_name, AVG(income) AS Avg_salary FROM employees
-GROUP BY last_name
-ORDER BY last_name;
 
 
 ###################################################################################
@@ -63,13 +53,23 @@ GROUP BY transport_unit.transport_id
 ORDER BY total_working_days DESC;
 
 
+##################################################################################
+# Get people who have birthday in May
+#---------------------------------------------------------------------------------
+# 5 rows retrieved starting from 1 in 130 ms (execution: 14 ms, fetching: 116 ms)
+##################################################################################
+SELECT e.first_name, e.last_name, e.date_of_birth
+FROM employees AS e
+WHERE DATE_FORMAT(date_of_birth, '%m') = '05';
+
+
 #################################################################################
 # Get a number of years every person works in `CK-ELECTRO-TRANS`
 #--------------------------------------------------------------------------------
 # 10 rows retrieved starting from 1 in 87 ms (execution: 63 ms, fetching: 24 ms)
 #################################################################################
 SELECT ttl.employee_id, e.first_name, e.last_name, e.hired_at, ttl.created_at,
-       DATEDIFF(ttl.created_at, e.hired_at) / 365.25 AS total_years_of_working_exp
+       TIMESTAMPDIFF(YEAR, e.hired_at, ttl.created_at) AS total_years_of_working_exp
 FROM employees AS e
          INNER JOIN timelogs ttl ON e.employee_id = ttl.employee_id
     AND ttl.timelog_id =
