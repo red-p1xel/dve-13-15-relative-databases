@@ -60,7 +60,7 @@ ORDER BY total_working_days DESC;
 ##################################################################################
 SELECT e.first_name, e.last_name, e.date_of_birth
 FROM employees AS e
-WHERE DATE_FORMAT(date_of_birth, '%m') = '05';
+WHERE MONTH(date_of_birth) = 5;
 
 
 #################################################################################
