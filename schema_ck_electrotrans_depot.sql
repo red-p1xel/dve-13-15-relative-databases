@@ -1,13 +1,4 @@
 # ----------------------------------------------------------------------------------------------------------------------
-DROP DATABASE IF EXISTS `ck_electrotrans_depot`;
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# noinspection SpellCheckingInspection
-CREATE DATABASE IF NOT EXISTS `ck_electrotrans_depot` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `transports`;
 CREATE TABLE `transports`
 (
@@ -148,7 +139,7 @@ CREATE UNIQUE INDEX position_title_index ON `positions` (title DESC);
 INSERT INTO `positions` (title, created_at)
 VALUES ('Depot Chief', '2021-04-27 11:28:38'),
        ('Accountant Manager', '2021-04-27 11:28:38'),
-       ('Driver','2021-04-27 11:28:38'),
+       ('Driver', '2021-04-27 11:28:38'),
        ('Mechanic', '2021-04-27 11:28:38'),
        ('Dispatcher', '2021-04-27 11:28:38');
 
