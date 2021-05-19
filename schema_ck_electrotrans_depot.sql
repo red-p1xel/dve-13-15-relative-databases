@@ -1,13 +1,4 @@
 # ----------------------------------------------------------------------------------------------------------------------
-DROP DATABASE IF EXISTS `ck_electrotrans_depot`;
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# noinspection SpellCheckingInspection
-CREATE DATABASE IF NOT EXISTS `ck_electrotrans_depot` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `transports`;
 CREATE TABLE `transports`
 (
@@ -139,19 +130,18 @@ CREATE TABLE `positions`
 (
     `position_id` INT(11) unsigned NOT NULL AUTO_INCREMENT,
     `title`       varchar(60)      NOT NULL UNIQUE,
-    `salary`      DECIMAL(8, 2)    NOT NULL DEFAULT 9000.00,
     `created_at`  DATETIME         NOT NULL,
     `updated_at`  DATETIME         NULL DEFAULT NULL,
     PRIMARY KEY (`position_id`)
 );
 CREATE UNIQUE INDEX position_title_index ON `positions` (title DESC);
 
-INSERT INTO `positions` (title, salary, created_at)
-VALUES ('Depot Chief', 20.000, '2021-04-27 11:28:38'),
-       ('Accountant Manager', 15.0000, '2021-04-27 11:28:38'),
-       ('Driver', 9.000 ,'2021-04-27 11:28:38'),
-       ('Mechanic', 12.000, '2021-04-27 11:28:38'),
-       ('Dispatcher', 8.000, '2021-04-27 11:28:38');
+INSERT INTO `positions` (title, created_at)
+VALUES ('Depot Chief', '2021-04-27 11:28:38'),
+       ('Accountant Manager', '2021-04-27 11:28:38'),
+       ('Driver', '2021-04-27 11:28:38'),
+       ('Mechanic', '2021-04-27 11:28:38'),
+       ('Dispatcher', '2021-04-27 11:28:38');
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -162,6 +152,7 @@ CREATE TABLE `employees`
     `first_name`    varchar(25)      NOT NULL,
     `last_name`     varchar(25)      NOT NULL,
     `position_id`   INT(11) unsigned NOT NULL,
+    `income`        DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
     `date_of_birth` DATETIME         NOT NULL,
     `hired_at`      DATETIME         NOT NULL,
     `updated_at`    DATETIME         NULL DEFAULT NULL,
@@ -173,14 +164,14 @@ ALTER TABLE `employees`
 CREATE INDEX employees_firstname_index ON `employees` (first_name DESC);
 CREATE INDEX employees_lastname_index ON `employees` (last_name DESC);
 
-INSERT INTO employees (first_name, last_name, position_id, date_of_birth, hired_at)
-VALUES ('Avdei', 'Volodin', 1, '1984-04-25 11:34:44', '2018-04-27 11:34:54'),
-       ('Nancy', 'Carter', 2, '1986-02-17 11:34:44', '2018-04-27 11:34:54'),
-       ('Ruslana', 'Alexeeva', 3, '1994-03-11 11:34:44', '2018-04-27 11:34:54'),
-       ('Nick', 'Gavrilov', 3, '1980-01-01 11:34:44', '2018-04-27 11:34:54'),
-       ('Borislav', 'Zakharov', 4, '1976-11-15 11:34:44', '2018-04-27 11:34:54'),
-       ('Dementi', 'Yermakov', 4, '1984-03-22 11:34:44', '2018-04-27 11:34:54'),
-       ('Rodion', 'Bulgakov', 5, '1993-09-01 11:34:44', '2018-04-27 11:34:54');
+INSERT INTO employees (first_name, last_name, position_id, income, date_of_birth, hired_at)
+VALUES ('Avdei', 'Volodin', 1, 30.000, '1984-04-25 11:34:44', '2018-04-27 11:34:54'),
+       ('Nancy', 'Carter', 2, 15.000, '1986-02-17 11:34:44', '2018-04-27 11:34:54'),
+       ('Ruslana', 'Alexeeva', 3, 9.000, '1994-03-11 11:34:44', '2018-04-27 11:34:54'),
+       ('Nick', 'Gavrilov', 3, 9.000, '1980-01-01 11:34:44', '2018-04-27 11:34:54'),
+       ('Borislav', 'Zakharov', 4, 9.000, '1976-11-15 11:34:44', '2018-04-27 11:34:54'),
+       ('Dementi', 'Yermakov', 4, 9.000, '1984-03-22 11:34:44', '2018-04-27 11:34:54'),
+       ('Rodion', 'Bulgakov', 5, 13.000, '1993-09-01 11:34:44', '2018-04-27 11:34:54');
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -190,7 +181,7 @@ DROP TABLE IF EXISTS `timelogs`;
 CREATE TABLE `timelogs`
 (
     `timelog_id`   INT(11) unsigned NOT NULL AUTO_INCREMENT,
-    `time_spent`   DECIMAL(2, 1)    NOT NULL DEFAULT 0.00,
+    `daily_income` DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
     `employee_id`  INT(11) unsigned NOT NULL,
     `transport_id` INT(11) unsigned NOT NULL,
     `route_id`     INT(11) unsigned NOT NULL,
@@ -208,27 +199,27 @@ ALTER TABLE `timelogs`
 ALTER TABLE `timelogs`
     ADD CONSTRAINT `timelogs_fk2` FOREIGN KEY (`route_id`) REFERENCES `routes` (`route_id`) ON DELETE CASCADE;
 
-INSERT INTO timelogs (time_spent, employee_id, transport_id, route_id)
-VALUES (7.00, 3, 1, 1),
-       (5.00, 4, 2, 2),
-       (7.00, 3, 3, 3),
-       (5.00, 4, 4, 4),
-       (7.00, 3, 5, 5),
-       (5.00, 4, 3, 6),
-       (7.00, 3, 2, 11),
-       (5.00, 4, 3, 8),
-       (7.00, 3, 1, 10),
-       (5.00, 4, 4, 7),
-       (7.00, 3, 4, 7),
-       (5.00, 4, 3, 6),
-       (7.00, 3, 2, 11),
-       (5.00, 4, 4, 9),
-       (7.00, 3, 4, 9),
-       (5.00, 4, 2, 11),
-       (7.00, 3, 1, 7),
-       (5.00, 4, 4, 2),
-       (7.00, 3, 4, 10),
-       (5.00, 4, 1, 11);
+INSERT INTO timelogs (daily_income, employee_id, transport_id, route_id)
+VALUES (70000.00, 3, 1, 1),
+       (50000.00, 4, 2, 2),
+       (70000.00, 3, 3, 3),
+       (50000.00, 4, 4, 4),
+       (70000.00, 3, 5, 5),
+       (50000.00, 4, 3, 6),
+       (70000.00, 3, 2, 11),
+       (50000.00, 4, 3, 8),
+       (70000.00, 3, 1, 10),
+       (50000.00, 4, 4, 7),
+       (70000.00, 3, 4, 7),
+       (50000.00, 4, 3, 6),
+       (70000.00, 3, 2, 11),
+       (50000.00, 4, 4, 9),
+       (70000.00, 3, 4, 9),
+       (50000.00, 4, 2, 11),
+       (70000.00, 3, 1, 7),
+       (50000.00, 4, 4, 2),
+       (70000.00, 3, 4, 10),
+       (50000.00, 4, 1, 11);
 
 
 # ----------------------------------------------------------------------------------------------------------------------
